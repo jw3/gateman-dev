@@ -4,13 +4,10 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.delay
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
@@ -79,7 +76,7 @@ class WsService : Service(), CoroutineScope by MainScope() {
         listeners.add(channel)
 
     private fun publish(e: Event) =
-        async {
+        launch {
             listeners.forEach { l -> l.send(e) }
         }
 
@@ -94,7 +91,6 @@ class WsService : Service(), CoroutineScope by MainScope() {
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             // todo;; an actor should manage reconnects
-            println("======================== websocket onFailure ======================== ")
             println(t.message)
             publish(Disconnected)
             connected = false

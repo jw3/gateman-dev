@@ -45,21 +45,21 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         bindService(Intent(this, WsService::class.java), ws, Context.BIND_AUTO_CREATE)
 
         closeButton.setOnLongClickListener {
-            async {
+            launch {
                 ws.send(Close)
             }
             true
         }
 
         switch1.setOnCheckedChangeListener { _, checked ->
-            async {
+            launch {
                 if (checked) ws.send(Connect) else ws.send(Disconnect)
             }
         }
 
         findViewById<Slider>(R.id.slider).apply {
             this.addOnChangeListener(Slider.OnChangeListener { slider, value, _ ->
-                async {
+                launch {
                     ws.send(Move(value.toInt()))
                     println("slider value ${slider.value}")
                 }
