@@ -9,11 +9,16 @@ sealed interface Cmd
 object Ping : Cmd
 object Close : Cmd
 class Move(val to: Int) : Cmd
+object Connect : Cmd
+object Disconnect : Cmd
 
 sealed interface Event
 object Closing : Event
 class Moving(val to: Int) : Event
 class Stopped(val at: Int) : Event
+object Connected : Event
+object Connecting : Event
+object Disconnected : Event
 
 class EventsServiceConnection(val channel: SendChannel<Event>) : ServiceConnection {
     private lateinit var ws: WsService

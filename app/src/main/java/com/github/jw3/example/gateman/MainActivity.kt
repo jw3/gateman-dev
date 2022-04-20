@@ -3,7 +3,6 @@ package com.github.jw3.example.gateman
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.slider.Slider
 import kotlinx.android.synthetic.main.activity_main.*
@@ -18,9 +17,23 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     @ObsoleteCoroutinesApi
     val gateGui = actor<Event> {
         for (e in channel) {
-            println("received $e")
             ++eventCount
             counter.text = "$eventCount"
+
+            when (e) {
+                Connected -> {
+                    switch1.isChecked = true
+                    switch1.isEnabled = true
+                }
+                Connecting -> {
+                    switch1.isEnabled = false
+                }
+                Disconnected -> {
+                    switch1.isChecked = false
+                    switch1.isEnabled = true
+                }
+                else -> {}
+            }
         }
     }
 
@@ -36,6 +49,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 ws.send(Close)
             }
             true
+        }
+
+        switch1.setOnCheckedChangeListener { _, checked ->
+            async {
+                if (checked) ws.send(Connect) else ws.send(Disconnect)
+            }
         }
 
         findViewById<Slider>(R.id.slider).apply {

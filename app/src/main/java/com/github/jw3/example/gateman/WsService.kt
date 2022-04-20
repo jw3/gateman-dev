@@ -10,7 +10,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.delay
 import okhttp3.Response
 import okhttp3.WebSocket
@@ -22,14 +21,19 @@ class WsService : Service(), CoroutineScope by MainScope() {
     private lateinit var ws: WebSocket
     private val binder = WsBinder()
     private val listeners: MutableList<SendChannel<Event>> = mutableListOf()
+    private var connected = false;
+
+    fun connect() {
+        ws = http.client(applicationContext)
+            .newWebSocket(http.ws("ws://$endpoint/gate"), wsHandler(gateActor))
+    }
 
     override fun onBind(intent: Intent): IBinder {
-        ws = http.client(applicationContext)
-            .newWebSocket(http.ws("ws://$endpoint/gate"), wsHandler(gateWs))
+        connect()
         return binder
     }
 
-    val gateWs = actor<Cmd> {
+    val gateActor: SendChannel<Cmd> = actor<Cmd> {
         var timer = ping(channel)
 
         for (msg in channel) {
@@ -53,6 +57,12 @@ class WsService : Service(), CoroutineScope by MainScope() {
                     ws.send("close")
                     timer = ping(channel)
                 }
+                is Connect -> if (!connected) {
+                    connect()
+                }
+                is Disconnect -> if (connected) {
+                    ws.close(1000, "User closed")
+                }
             }
         }
     }
@@ -63,17 +73,21 @@ class WsService : Service(), CoroutineScope by MainScope() {
     }
 
     suspend fun send(cmd: Cmd): Unit =
-        gateWs.send(cmd)
+        gateActor.send(cmd)
 
     fun listen(channel: SendChannel<Event>): Boolean =
         listeners.add(channel)
+
+    private fun publish(e: Event) =
+        async {
+            listeners.forEach { l -> l.send(e) }
+        }
 
     private fun wsHandler(channel: SendChannel<Cmd>) = object : WebSocketListener() {
         override fun onMessage(webSocket: WebSocket, text: String) {
             println("recv: $text")
             text.toIntOrNull()?.let { at ->
-                val moved = Stopped(at)
-                listeners.forEach { l -> l.sendBlocking(moved) }
+                publish(Stopped(at))
             }
             // todo;; second channel to handle incoming
         }
@@ -82,20 +96,26 @@ class WsService : Service(), CoroutineScope by MainScope() {
             // todo;; an actor should manage reconnects
             println("======================== websocket onFailure ======================== ")
             println(t.message)
+            publish(Disconnected)
+            connected = false
         }
 
         override fun onOpen(webSocket: WebSocket, response: Response) {
+            connected = true
             println("websocket onOpen")
+            publish(Connected)
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             println("websocket onClosing")
-            // notify gui
+            publish(Disconnected)
+            connected = false
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
             println("websocket onClosed")
-            // notify gui
+            publish(Disconnected)
+            connected = false
         }
     }
 
