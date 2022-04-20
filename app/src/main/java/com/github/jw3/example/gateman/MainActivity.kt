@@ -1,52 +1,50 @@
 package com.github.jw3.example.gateman
 
+import android.content.Context
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.IBinder
-import android.os.Message
-import android.os.Messenger
-import okhttp3.Response
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.slider.Slider
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.actor
 
-class MainActivity : AppCompatActivity() {
-    private lateinit var ws: WebSocket
+@ExperimentalCoroutinesApi
+class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
+    private lateinit var ws: EventsServiceConnection
+    private var eventCount = 0L
+
+    @ObsoleteCoroutinesApi
+    val gateGui = actor<Event> {
+        for (e in channel) {
+            println("received $e")
+            ++eventCount
+            counter.text = "$eventCount"
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        ws = connectWs()
-    }
+        ws = EventsServiceConnection(gateGui)
+        bindService(Intent(this, WsService::class.java), ws, Context.BIND_AUTO_CREATE)
 
-    fun connectWs(): WebSocket {
-        return http.client(applicationContext)
-            .newWebSocket(http.wsreq("ws://192.168.1.98/gate"), wsHandler)
-    }
-
-    val wsHandler = object : WebSocketListener() {
-        override fun onMessage(webSocket: WebSocket, text: String) {
-            print("recv: $text")
+        closeButton.setOnLongClickListener {
+            async {
+                ws.send(Close)
+            }
+            true
         }
 
-        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            // todo;; an actor should manage reconnects
-            println("websocket onFailure")
-            webSocket.cancel()
-            ws = connectWs()
-        }
-
-        override fun onOpen(webSocket: WebSocket, response: Response) {
-            println("websocket onOpen")
-        }
-
-        override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-            println("websocket onClosing")
-        }
-
-        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            println("websocket onClosed")
+        findViewById<Slider>(R.id.slider).apply {
+            this.addOnChangeListener(Slider.OnChangeListener { slider, value, _ ->
+                async {
+                    ws.send(Move(value.toInt()))
+                    println("slider value ${slider.value}")
+                }
+            })
         }
     }
 }

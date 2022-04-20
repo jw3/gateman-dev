@@ -13,6 +13,11 @@
         android:theme="@style/Theme.ExampleGatemanControl"
         android:usesCleartextTraffic="true">
 
+        <service
+            android:name=".WsService"
+            android:enabled="true"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

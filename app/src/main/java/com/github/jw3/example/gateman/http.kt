@@ -9,7 +9,7 @@ object http {
         return OkHttpClient.Builder().build()
     }
 
-    fun wsreq(url: String): Request {
+    fun ws(url: String): Request {
         return Request.Builder().get().url(url).build()
     }
 }
