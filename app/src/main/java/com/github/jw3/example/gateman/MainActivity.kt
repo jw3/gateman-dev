@@ -18,21 +18,35 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     val gateGui = actor<Event> {
         for (e in channel) {
             ++eventCount
-            counter.text = "$eventCount"
+            eventCounter.text = "$eventCount"
 
             when (e) {
-                Connected -> {
+                is Stopped -> {
+                    slider.isEnabled = true
+                }
+                is Closing -> {
+                    slider.value = 0f
+//                    slider.isEnabled = false
+                }
+                is Moving -> {
+//                    progressBar.progress = e.to
+                    currentPosition.text = "${e.to}"
+                }
+                is Moved -> {
+                    progressBar.progress = e.at
+                    currentPosition.text = "${e.at}"
+                }
+                is Connected -> {
                     switch1.isChecked = true
                     switch1.isEnabled = true
                 }
-                Connecting -> {
+                is Connecting -> {
                     switch1.isEnabled = false
                 }
-                Disconnected -> {
+                is Disconnected -> {
                     switch1.isChecked = false
                     switch1.isEnabled = true
                 }
-                else -> {}
             }
         }
     }
@@ -57,13 +71,15 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             }
         }
 
-        findViewById<Slider>(R.id.slider).apply {
-            this.addOnChangeListener(Slider.OnChangeListener { slider, value, _ ->
-                launch {
-                    ws.send(Move(value.toInt()))
-                    println("slider value ${slider.value}")
-                }
-            })
-        }
+        slider.addOnChangeListener(Slider.OnChangeListener { slider, value, _ ->
+            launch {
+                ws.send(Move(value.toInt()))
+                println("slider value ${slider.value}")
+            }
+        })
+
+        progressBar.min = 0
+        progressBar.max = 10
+        progressBar.progress = 7
     }
 }

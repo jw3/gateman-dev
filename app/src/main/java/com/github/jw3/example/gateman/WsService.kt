@@ -13,7 +13,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
 class WsService : Service(), CoroutineScope by MainScope() {
-    val endpoint = "192.168.1.66:3030"
+    val endpoint = "192.168.1.98:9001"
 
     private lateinit var ws: WebSocket
     private val binder = WsBinder()
@@ -82,6 +82,21 @@ class WsService : Service(), CoroutineScope by MainScope() {
 
     private fun wsHandler(channel: SendChannel<Cmd>) = object : WebSocketListener() {
         override fun onMessage(webSocket: WebSocket, text: String) {
+            val (event, value) = text.split(":")
+            when (event) {
+                "moving" -> {
+                    publish(Moving(value.toInt()))
+                }
+                "moved" -> {
+                    publish(Moved(value.toInt()))
+                }
+                "closing" -> {
+                    publish(Closing)
+                }
+                "stopped" -> {
+                    publish(Stopped(value.toInt()))
+                }
+            }
             println("recv: $text")
             text.toIntOrNull()?.let { at ->
                 publish(Stopped(at))

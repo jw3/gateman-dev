@@ -10,10 +10,11 @@
         android:id="@+id/slider"
         android:layout_width="400dp"
         android:layout_height="128dp"
+        android:alpha=".5"
         android:elevation="5dp"
-        android:stepSize="10.0"
+        android:stepSize="1.0"
         android:valueFrom="0.0"
-        android:valueTo="100.0"
+        android:valueTo="4.0"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -21,7 +22,7 @@
         app:trackHeight="14dp" />
 
     <TextView
-        android:id="@+id/counter"
+        android:id="@+id/eventCounter"
         android:layout_width="68dp"
         android:layout_height="35dp"
         android:text="0"
@@ -31,6 +32,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/currentPosition"
+        android:layout_width="68dp"
+        android:layout_height="35dp"
+        android:text="0"
+        android:textAlignment="center"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/eventCounter"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="206dp" />
 
     <Button
         android:id="@+id/closeButton"
@@ -42,12 +54,26 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/slider" />
 
-    <Switch
+    <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switch1"
         android:layout_width="60dp"
         android:layout_height="47dp"
+        android:elevation="10dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/counter"
+        app:layout_constraintStart_toEndOf="@+id/eventCounter"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="350dp"
+        android:layout_height="25dp"
+        android:elevation="50dp"
+        android:max="4"
+        android:progress="0"
+        app:layout_constraintBottom_toBottomOf="@+id/slider"
+        app:layout_constraintEnd_toEndOf="@+id/slider"
+        app:layout_constraintStart_toStartOf="@+id/slider"
+        app:layout_constraintTop_toTopOf="@+id/slider" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

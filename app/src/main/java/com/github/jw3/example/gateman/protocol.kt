@@ -14,6 +14,7 @@ object Disconnect : Cmd
 
 sealed interface Event
 object Closing : Event
+class Moved(val at: Int) : Event
 class Moving(val to: Int) : Event
 class Stopped(val at: Int) : Event
 object Connected : Event
